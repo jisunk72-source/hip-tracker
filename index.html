@@ -2,8 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>고관절 균형 트래커 · 숲속 루틴</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>건강한 궁둥스 만들기</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="궁둥스">
+<meta name="theme-color" content="#3d5a3e">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%232e4430'/%3E%3Crect x='82' y='112' width='16' height='28' rx='5' fill='%237a5c3a'/%3E%3Cpolygon points='90,30 50,82 130,82' fill='%233d5a3e'/%3E%3Cpolygon points='90,46 44,94 136,94' fill='%235a7a3a'/%3E%3Cpolygon points='90,62 42,108 138,108' fill='%238aab6e'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -820,6 +825,26 @@ function showToast(msg){
 }
 
 render();
+
+/* ── Swipe to change tab ─────────────────── */
+let touchStartX = 0, touchStartY = 0;
+const TABS_ORDER = ['workout','calendar','history'];
+
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, {passive:true});
+
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return;
+  const active = document.querySelector('.tab.active');
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const cur = tabs.indexOf(active);
+  if (dx < 0 && cur < TABS_ORDER.length - 1) switchTab(TABS_ORDER[cur + 1]);
+  if (dx > 0 && cur > 0) switchTab(TABS_ORDER[cur - 1]);
+}, {passive:true});
 </script>
 </body>
 </html>

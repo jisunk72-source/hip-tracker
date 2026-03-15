@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고관절 균형 트래커 · 숲속 루틴</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --moss:    #3d5a3e;
+  --moss2:   #2e4430;
+  --fern:    #5a7a3a;
+  --sage:    #8aab6e;
+  --mist:    #c8d9b8;
+  --bark:    #7a5c3a;
+  --soil:    #a08060;
+  --cream:   #f4f0e6;
+  --paper:   #ede8da;
+  --parchment: #e5deca;
+  --fog:     #d6cfbe;
+  --text:    #2a3520;
+  --text2:   #5a6e4a;
+  --text3:   #8a9e7a;
+  --amber:   #b07a20;
+  --red-leaf:#8a3a2a;
+}
+
+@keyframes sway    { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(1.5deg) translateX(2px)} }
+@keyframes float   { 0%,100%{transform:translateY(0)}   50%{transform:translateY(-6px)} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pop     { 0%,100%{transform:scale(1)} 50%{transform:scale(1.22)} }
+
+body {
+  font-family: 'Noto Serif KR', Georgia, serif;
+  background: var(--paper);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content:''; position:fixed; inset:0; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(90,122,58,0.10) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 80% at 90% 70%, rgba(61,90,62,0.08) 0%,transparent 60%),
+    radial-gradient(ellipse 100% 40% at 50% 100%, rgba(122,92,58,0.06) 0%,transparent 50%);
+  pointer-events:none;
+}
+
+.leaf-deco { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.leaf-deco svg { position:absolute; opacity:0.07; }
+.leaf-deco svg:nth-child(1) { top:-20px; right:40px; width:180px; animation:sway 8s ease-in-out infinite; transform-origin:top center; }
+.leaf-deco svg:nth-child(2) { top:30%; left:-30px; width:120px; animation:sway 11s ease-in-out infinite reverse; transform-origin:top center; opacity:0.05; }
+.leaf-deco svg:nth-child(3) { bottom:10%; right:-20px; width:160px; animation:sway 9s ease-in-out infinite; transform-origin:bottom center; opacity:0.06; }
+
+.container { position:relative; z-index:1; max-width:580px; margin:0 auto; padding:0 16px 80px; }
+
+.hero { text-align:center; padding:40px 0 28px; animation:fadeUp .7s ease both; }
+.hero-icon { width:64px; height:64px; margin:0 auto 16px; animation:float 6s ease-in-out infinite; }
+.hero h1 { font-family:'DM Serif Display',Georgia,serif; font-size:26px; font-weight:400; color:var(--moss2); }
+.hero .sub { font-size:13px; color:var(--text3); margin-top:6px; font-weight:300; letter-spacing:.04em; }
+.hero-date { display:inline-block; margin-top:12px; font-size:12px; color:var(--text2); background:var(--mist); border-radius:20px; padding:4px 14px; }
+
+.tabs { display:flex; background:var(--parchment); border-radius:12px; padding:4px; margin-bottom:22px; border:1px solid var(--fog); animation:fadeUp .7s .1s ease both; }
+.tab { flex:1; padding:9px 8px; border-radius:9px; border:none; background:transparent; font-family:'Noto Serif KR',serif; font-size:13px; cursor:pointer; color:var(--text3); transition:all .2s; }
+.tab.active { background:var(--moss); color:var(--cream); box-shadow:0 2px 8px rgba(45,68,40,0.25); }
+
+.section { display:none; }
+.section.active { display:block; animation:fadeUp .4s ease both; }
+
+/* Progress */
+.prog-wrap { background:var(--parchment); border:1px solid var(--fog); border-radius:14px; padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; gap:14px; }
+.prog-icon { font-size:18px; flex-shrink:0; }
+.prog-inner { flex:1; }
+.prog-label { font-size:12px; color:var(--text3); margin-bottom:6px; }
+.prog-bar { height:6px; background:var(--fog); border-radius:3px; overflow:hidden; }
+.prog-fill { height:100%; background:linear-gradient(90deg,var(--fern),var(--sage)); border-radius:3px; transition:width .5s cubic-bezier(.4,0,.2,1); }
+.prog-txt { font-size:13px; font-weight:600; color:var(--moss); min-width:36px; text-align:right; }
+
+/* Card */
+.ex-card { background:var(--cream); border:1px solid var(--fog); border-radius:16px; padding:18px; margin-bottom:14px; transition:border-color .3s,box-shadow .3s; position:relative; overflow:hidden; }
+.ex-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--fog); border-radius:16px 0 0 16px; transition:background .3s; }
+.ex-card.done { border-color:var(--mist); box-shadow:0 2px 12px rgba(90,122,58,0.10); }
+.ex-card.done::before { background:linear-gradient(180deg,var(--sage),var(--fern)); }
+
+.ex-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; gap:10px; }
+.ex-meta { display:flex; align-items:center; gap:12px; }
+.ex-idx { width:28px; height:28px; border-radius:50%; background:var(--parchment); border:1px solid var(--fog); font-size:13px; font-weight:600; color:var(--text3); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .3s; }
+.ex-idx.done { background:var(--moss); color:var(--cream); border-color:var(--moss); }
+.ex-name { font-size:14px; font-weight:600; color:var(--text); }
+.ex-sub { font-size:11px; color:var(--text3); margin-top:2px; font-weight:300; }
+.done-btn { font-size:12px; padding:5px 13px; border-radius:20px; border:1px solid var(--fog); background:transparent; cursor:pointer; color:var(--text3); flex-shrink:0; font-family:'Noto Serif KR',serif; transition:all .2s; }
+.done-btn:hover { border-color:var(--sage); color:var(--fern); }
+.done-btn.on { background:var(--moss); color:var(--cream); border-color:var(--moss); }
+
+/* Sides */
+.sides { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:13px; }
+.side-block { background:var(--parchment); border-radius:12px; padding:12px 13px; border:1px solid var(--fog); }
+.side-title { font-size:11px; color:var(--text3); margin-bottom:9px; letter-spacing:.04em; }
+.set-row { display:flex; align-items:center; padding:6px 0; border-bottom:1px solid rgba(200,217,184,0.4); }
+.set-row:last-child { border-bottom:none; }
+.set-lbl { font-size:12px; color:var(--text3); width:36px; flex-shrink:0; }
+.set-ctrl { display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; }
+
+/* Big tap button */
+.cb { width:30px; height:30px; border-radius:50%; border:1px solid var(--fog); background:var(--cream); cursor:pointer; font-size:18px; color:var(--moss); display:flex; align-items:center; justify-content:center; transition:all .15s; user-select:none; -webkit-user-select:none; }
+.cb:active { background:var(--mist); transform:scale(0.88); }
+
+/* Circular progress ring around rep count */
+.rep-wrap { position:relative; width:52px; height:52px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.rep-svg { position:absolute; inset:0; width:100%; height:100%; }
+.rep-arc { transition:stroke-dashoffset .35s cubic-bezier(.4,0,.2,1), stroke .3s; }
+.cv { font-size:15px; font-weight:700; color:var(--text); position:relative; z-index:1; line-height:1; transition:color .2s; }
+.cv.hit { color:var(--fern); }
+.cv.over { color:var(--bark); }
+.cv.popping { animation:pop .22s ease; }
+
+/* Balance */
+.bal-wrap { margin-bottom:13px; }
+.bal-track { display:flex; align-items:center; gap:8px; }
+.bal-side { font-size:10px; color:var(--text3); width:20px; text-align:center; flex-shrink:0; }
+.bal-bar { flex:1; height:5px; background:var(--fog); border-radius:3px; overflow:hidden; }
+.bal-fill { height:100%; background:linear-gradient(90deg,var(--sage),var(--fern)); border-radius:3px; transition:width .35s; }
+.bal-status { font-size:11px; min-width:68px; text-align:right; font-weight:600; }
+.bal-g{color:var(--fern)} .bal-w{color:var(--amber)} .bal-b{color:var(--red-leaf)}
+.bal-pct { display:flex; justify-content:space-between; font-size:10px; color:var(--text3); margin-top:4px; padding:0 28px; }
+
+/* Timer */
+.timer-bar { border-top:1px solid rgba(200,217,184,0.5); padding-top:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.t-label { font-size:12px; color:var(--text3); flex:1; min-width:60px; }
+.presets { display:flex; gap:4px; }
+.pre { font-size:11px; padding:4px 9px; border-radius:20px; border:1px solid var(--fog); background:transparent; cursor:pointer; color:var(--text3); font-family:'Noto Serif KR',serif; transition:all .15s; }
+.pre.on { background:var(--parchment); border-color:var(--sage); color:var(--fern); }
+.t-btn { font-size:12px; padding:5px 13px; border-radius:20px; border:1px solid var(--fog); background:transparent; cursor:pointer; color:var(--text2); font-family:'Noto Serif KR',serif; transition:all .15s; white-space:nowrap; }
+.t-btn:hover { background:var(--parchment); }
+.t-btn.running { background:var(--moss); color:var(--cream); border-color:var(--moss); }
+.t-num { font-size:15px; font-weight:600; min-width:44px; text-align:right; color:var(--moss2); }
+.t-num.urgent { color:var(--red-leaf); animation:pop .6s ease infinite; }
+
+/* Summary */
+.nature-divider { display:flex; align-items:center; gap:10px; margin:20px 0; color:var(--text3); font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+.nature-divider::before,.nature-divider::after { content:''; flex:1; height:1px; background:var(--fog); }
+.summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.scard { background:var(--parchment); border:1px solid var(--fog); border-radius:14px; padding:16px 12px; text-align:center; }
+.snum { font-size:26px; font-weight:600; color:var(--moss2); font-family:'DM Serif Display',serif; }
+.slbl { font-size:11px; color:var(--text3); margin-top:4px; font-weight:300; }
+
+.action-row { display:flex; gap:10px; margin-top:22px; }
+.save-btn { flex:1; padding:14px; border-radius:14px; border:none; background:var(--moss2); color:var(--cream); font-size:15px; font-weight:600; cursor:pointer; font-family:'Noto Serif KR',serif; transition:all .2s; box-shadow:0 4px 14px rgba(46,68,48,0.28); }
+.save-btn:hover { background:var(--moss); transform:translateY(-1px); }
+.rst-btn { padding:14px 18px; border-radius:14px; border:1px solid var(--fog); background:transparent; font-size:13px; cursor:pointer; color:var(--text3); font-family:'Noto Serif KR',serif; transition:all .2s; }
+.rst-btn:hover { border-color:var(--soil); color:var(--soil); }
+
+/* Calendar */
+.cal-card { background:var(--cream); border:1px solid var(--fog); border-radius:16px; padding:20px; }
+.cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.cal-nav { width:36px; height:36px; border-radius:50%; border:1px solid var(--fog); background:var(--parchment); cursor:pointer; font-size:18px; color:var(--text2); display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.cal-nav:hover { border-color:var(--sage); color:var(--moss); }
+.cal-title { font-family:'DM Serif Display',serif; font-size:18px; color:var(--moss2); }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.cal-dn { text-align:center; font-size:11px; color:var(--text3); padding:6px 0; }
+.cal-cell { aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:13px; cursor:default; position:relative; color:var(--text3); }
+.cal-cell.has-data { background:var(--mist); color:var(--moss2); font-weight:600; cursor:pointer; }
+.cal-cell.today { border:2px solid var(--moss); color:var(--moss2); font-weight:600; }
+.cal-cell.empty { opacity:0; pointer-events:none; }
+.dot { width:4px; height:4px; border-radius:50%; background:var(--fern); position:absolute; bottom:4px; }
+
+/* History */
+.hist-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+.chart-card { background:var(--cream); border:1px solid var(--fog); border-radius:16px; padding:18px; margin-bottom:16px; }
+.chart-card-title { font-size:12px; color:var(--text3); margin-bottom:14px; letter-spacing:.04em; }
+.chart-wrap { position:relative; width:100%; height:180px; }
+.log-entry { background:var(--cream); border:1px solid var(--fog); border-radius:14px; padding:15px 18px; margin-bottom:10px; }
+.log-date { font-size:13px; font-weight:600; color:var(--moss2); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.log-date::before { content:'🌿'; font-size:12px; }
+.log-row { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--text2); padding:3px 0; }
+.log-val { color:var(--text); font-weight:600; }
+.badge { display:inline-block; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:6px; }
+.bg { background:rgba(90,122,58,0.12); color:var(--fern); }
+.bw { background:rgba(176,122,32,0.12); color:var(--amber); }
+.bb { background:rgba(138,58,42,0.12); color:var(--red-leaf); }
+.empty-state { text-align:center; padding:3rem 1rem; color:var(--text3); font-size:14px; }
+.empty-state .es-icon { font-size:40px; margin-bottom:12px; }
+
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--moss2); color:var(--cream); padding:11px 24px; border-radius:25px; font-size:13px; font-family:'Noto Serif KR',serif; opacity:0; pointer-events:none; transition:opacity .3s; z-index:999; white-space:nowrap; box-shadow:0 4px 16px rgba(46,68,48,0.35); }
+.toast.show { opacity:1; }
+
+/* Log entry actions */
+.log-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.log-date { font-size:13px; font-weight:600; color:var(--moss2); display:flex; align-items:center; gap:8px; margin-bottom:0; }
+.log-date::before { content:'🌿'; font-size:12px; }
+.log-actions { display:flex; gap:6px; }
+.log-act-btn { font-size:11px; padding:3px 10px; border-radius:20px; border:1px solid var(--fog); background:transparent; cursor:pointer; font-family:'Noto Serif KR',serif; transition:all .15s; }
+.log-edit-btn { color:var(--text2); }
+.log-edit-btn:hover { border-color:var(--sage); color:var(--fern); background:rgba(138,171,110,0.08); }
+.log-del-btn  { color:var(--red-leaf); }
+.log-del-btn:hover  { border-color:var(--red-leaf); background:rgba(138,58,42,0.06); }
+
+/* Modal overlay */
+.modal-overlay { position:fixed; inset:0; background:rgba(42,53,32,0.45); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .2s; }
+.modal-overlay.show { opacity:1; pointer-events:all; }
+.modal { background:var(--cream); border-radius:18px; width:100%; max-width:520px; max-height:88vh; overflow-y:auto; box-shadow:0 12px 40px rgba(42,53,32,0.22); }
+.modal-head { display:flex; align-items:flex-start; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--fog); position:sticky; top:0; background:var(--cream); z-index:1; border-radius:18px 18px 0 0; }
+.modal-title { font-family:'DM Serif Display',serif; font-size:17px; color:var(--moss2); }
+.modal-date  { font-size:12px; color:var(--text3); margin-top:3px; }
+.modal-close { width:30px; height:30px; border-radius:50%; border:1px solid var(--fog); background:transparent; cursor:pointer; font-size:17px; color:var(--text3); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s; }
+.modal-close:hover { border-color:var(--red-leaf); color:var(--red-leaf); }
+.modal-body  { padding:16px 20px; }
+.modal-ex    { margin-bottom:16px; }
+.modal-ex-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--fog); }
+.modal-sides { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.modal-side-block { background:var(--parchment); border-radius:10px; padding:10px 12px; border:1px solid var(--fog); }
+.modal-side-title { font-size:11px; color:var(--text3); margin-bottom:7px; }
+.modal-set-row { display:flex; align-items:center; padding:4px 0; border-bottom:1px solid rgba(200,217,184,0.35); }
+.modal-set-row:last-child { border-bottom:none; }
+.modal-set-lbl { font-size:12px; color:var(--text3); width:36px; }
+.modal-set-ctrl { display:flex; align-items:center; gap:5px; flex:1; justify-content:flex-end; }
+.mcb { width:26px; height:26px; border-radius:50%; border:1px solid var(--fog); background:var(--cream); cursor:pointer; font-size:15px; color:var(--moss); display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.mcb:active { background:var(--mist); transform:scale(0.88); }
+.mcv { font-size:14px; font-weight:600; min-width:26px; text-align:center; color:var(--text); }
+.mcv.mhit { color:var(--fern); } .mcv.mover { color:var(--bark); }
+.modal-foot { padding:14px 20px; border-top:1px solid var(--fog); display:flex; gap:8px; position:sticky; bottom:0; background:var(--cream); border-radius:0 0 18px 18px; }
+.modal-save   { flex:1; padding:11px; border-radius:12px; border:none; background:var(--moss2); color:var(--cream); font-size:14px; font-weight:600; cursor:pointer; font-family:'Noto Serif KR',serif; transition:all .2s; }
+.modal-save:hover { background:var(--moss); }
+.modal-cancel { padding:11px 16px; border-radius:12px; border:1px solid var(--fog); background:transparent; font-size:13px; cursor:pointer; color:var(--text3); font-family:'Noto Serif KR',serif; }
+
+/* Confirm delete */
+.confirm-overlay { position:fixed; inset:0; background:rgba(42,53,32,0.5); z-index:1100; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .2s; }
+.confirm-overlay.show { opacity:1; pointer-events:all; }
+.confirm-box { background:var(--cream); border-radius:16px; padding:26px 22px; width:100%; max-width:300px; text-align:center; box-shadow:0 10px 32px rgba(42,53,32,0.22); }
+.confirm-icon { font-size:32px; margin-bottom:10px; }
+.confirm-msg  { font-size:14px; color:var(--text); line-height:1.6; margin-bottom:18px; }
+.confirm-msg strong { color:var(--moss2); }
+.confirm-btns { display:flex; gap:8px; }
+.confirm-del  { flex:1; padding:11px; border-radius:12px; border:none; background:var(--red-leaf); color:#fff; font-size:14px; font-weight:600; cursor:pointer; font-family:'Noto Serif KR',serif; }
+.confirm-no   { flex:1; padding:11px; border-radius:12px; border:1px solid var(--fog); background:transparent; font-size:14px; cursor:pointer; color:var(--text2); font-family:'Noto Serif KR',serif; }
+</style>
+</head>
+<body>
+
+<div class="leaf-deco">
+  <svg viewBox="0 0 200 300" fill="none"><path d="M100 10 C60 60 20 120 40 200 C60 280 140 290 160 220 C180 150 150 80 100 10Z" fill="#3d5a3e"/><line x1="100" y1="10" x2="100" y2="290" stroke="#2e4430" stroke-width="3"/><line x1="100" y1="80" x2="60" y2="130" stroke="#2e4430" stroke-width="1.5"/><line x1="100" y1="120" x2="145" y2="160" stroke="#2e4430" stroke-width="1.5"/><line x1="100" y1="160" x2="65" y2="200" stroke="#2e4430" stroke-width="1.5"/><line x1="100" y1="200" x2="140" y2="235" stroke="#2e4430" stroke-width="1.5"/></svg>
+  <svg viewBox="0 0 160 220" fill="none"><path d="M80 5 C40 50 10 100 30 160 C50 220 120 220 140 165 C160 110 130 55 80 5Z" fill="#5a7a3a"/><line x1="80" y1="5" x2="80" y2="215" stroke="#3d5a3e" stroke-width="2.5"/><line x1="80" y1="70" x2="45" y2="110" stroke="#3d5a3e" stroke-width="1.5"/><line x1="80" y1="110" x2="118" y2="145" stroke="#3d5a3e" stroke-width="1.5"/><line x1="80" y1="150" x2="48" y2="180" stroke="#3d5a3e" stroke-width="1.5"/></svg>
+  <svg viewBox="0 0 180 260" fill="none"><path d="M90 8 C50 55 15 115 35 185 C55 255 135 265 155 200 C175 135 145 65 90 8Z" fill="#3d5a3e"/><line x1="90" y1="8" x2="90" y2="255" stroke="#2e4430" stroke-width="3"/><line x1="90" y1="75" x2="52" y2="118" stroke="#2e4430" stroke-width="1.5"/><line x1="90" y1="118" x2="132" y2="152" stroke="#2e4430" stroke-width="1.5"/><line x1="90" y1="160" x2="58" y2="195" stroke="#2e4430" stroke-width="1.5"/></svg>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-icon">
+      <svg viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="30" fill="rgba(90,122,58,0.10)" stroke="#8aab6e" stroke-width="1.5"/>
+        <rect x="29" y="42" width="6" height="12" rx="2" fill="#7a5c3a"/>
+        <polygon points="32,10 18,32 46,32" fill="#3d5a3e"/>
+        <polygon points="32,18 16,36 48,36" fill="#5a7a3a"/>
+        <polygon points="32,26 17,42 47,42" fill="#8aab6e"/>
+      </svg>
+    </div>
+    <h1>건강한 궁둥스 만들기</h1>
+    <p class="sub">자연의 리듬으로 몸의 균형을 찾는 시간</p>
+    <div class="hero-date" id="hdate"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('workout')">🌿 오늘 운동</button>
+    <button class="tab" onclick="switchTab('calendar')">🌲 달력</button>
+    <button class="tab" onclick="switchTab('history')">🍂 기록</button>
+  </div>
+
+  <div id="tab-workout" class="section active">
+    <div class="prog-wrap">
+      <div class="prog-icon">🌱</div>
+      <div class="prog-inner">
+        <div class="prog-label">오늘의 진행</div>
+        <div class="prog-bar"><div class="prog-fill" id="pfill" style="width:0%"></div></div>
+      </div>
+      <span class="prog-txt" id="ptxt">0 / 7</span>
+    </div>
+    <div id="cards"></div>
+    <div class="nature-divider">오늘의 기록</div>
+    <div class="summary">
+      <div class="scard"><div class="snum" id="s-reps">0</div><div class="slbl">총 횟수</div></div>
+      <div class="scard"><div class="snum" id="s-sets">0</div><div class="slbl">완료 세트</div></div>
+      <div class="scard"><div class="snum" id="s-bal" style="font-size:17px">—</div><div class="slbl">좌우 균형</div></div>
+    </div>
+    <div class="action-row">
+      <button class="save-btn" onclick="save()">🌿 오늘 운동 저장</button>
+      <button class="rst-btn" onclick="resetAll()">초기화</button>
+    </div>
+  </div>
+
+  <div id="tab-calendar" class="section">
+    <div class="cal-card">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button class="cal-nav" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-days"></div>
+      <div class="cal-grid" id="cal-grid" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <div id="tab-history" class="section">
+    <div class="hist-stats" id="stats-grid"></div>
+    <div class="chart-card">
+      <div class="chart-card-title">최근 7일 · 좌우 비교</div>
+      <div class="chart-wrap"><canvas id="histChart"></canvas></div>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div><div class="modal-title">기록 수정</div><div class="modal-date" id="modal-date"></div></div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <button class="modal-cancel" onclick="closeModalDirect()">취소</button>
+      <button class="modal-save" onclick="saveEdit()">🌿 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm delete -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🍂</div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="closeConfirm()">취소</button>
+      <button class="confirm-del" onclick="confirmDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const TARGET = 10, NUM_SETS = 3;
+const EX = [
+  {id:'airplane', name:'힙 에어플레인',        sub:'고관절 회전 · 안정성', sided:true},
+  {id:'spclam',   name:'사이드 플랭크 크램쉘', sub:'외전 · 코어 안정성',   sided:true},
+  {id:'clam',     name:'클램쉘',               sub:'외회전 강화',           sided:true},
+  {id:'sidelift', name:'사이드 레그 레이즈',   sub:'외전 강화',             sided:true},
+  {id:'bridge',   name:'힙 브리지',            sub:'고관절 신전',           sided:false},
+  {id:'standing', name:'스탠딩 힙 어브덕션',   sub:'균형 · 외전',           sided:true},
+  {id:'pigeon',   name:'피전 스트레칭',        sub:'유연성 · 이완',         sided:true},
+];
+const EMOJIS = ['🌿','🌱','🍃','🌲','🍀','🌾','🌳'];
+
+let state = {}, ivals = {};
+let log = JSON.parse(localStorage.getItem('hiplog_forest') || '[]');
+let calDate = new Date(), histChart = null;
+
+/* ── Web Audio ─────────────────────────────── */
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, dur, vol, delay) {
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const t = ctx.currentTime + (delay || 0);
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  } catch(e) {}
+}
+/* 3·2·1 → 땡 땡 땡 (3초 시작 시 한번에 예약) */
+function scheduleCountdown(totalSec) {
+  beep(660, 0.11, 0.45, totalSec - 3);
+  beep(660, 0.11, 0.45, totalSec - 2);
+  beep(880, 0.20, 0.60, totalSec - 1);
+}
+/* 완료 상승 멜로디 */
+function beepDone() {
+  beep(523, 0.10, 0.4, 0.00);
+  beep(659, 0.10, 0.4, 0.12);
+  beep(784, 0.18, 0.5, 0.24);
+}
+
+/* ── State ───────────────────────────────────── */
+function mkSets() { return Array.from({length:NUM_SETS}, () => ({reps:0})); }
+function initState() {
+  state = {};
+  EX.forEach(ex => {
+    const sides = ex.sided ? ['left','right'] : ['both'];
+    state[ex.id] = { sides:{}, done:false, timer:{sec:0, preset:60, running:false} };
+    sides.forEach(s => { state[ex.id].sides[s] = mkSets(); });
+  });
+}
+initState();
+
+function fmt(s) { return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); }
+
+/* ── Circular progress ring ─────────────────── */
+const RING_R = 21, RING_CIRC = 2 * Math.PI * RING_R;
+
+function ringHTML(id, side, si, reps) {
+  const pct = Math.min(reps / TARGET, 1);
+  const offset = RING_CIRC * (1 - pct);
+  const stroke = reps >= TARGET ? '#5a7a3a' : '#c8d9b8';
+  const cls = reps >= TARGET ? (reps === TARGET ? ' hit' : ' over') : '';
+  return `<div class="rep-wrap">
+    <svg class="rep-svg" viewBox="0 0 52 52" fill="none">
+      <circle cx="26" cy="26" r="${RING_R}" stroke="#e5deca" stroke-width="4"/>
+      <circle cx="26" cy="26" r="${RING_R}" stroke="${stroke}" stroke-width="4"
+        stroke-linecap="round"
+        stroke-dasharray="${RING_CIRC.toFixed(2)}"
+        stroke-dashoffset="${offset.toFixed(2)}"
+        transform="rotate(-90 26 26)"
+        class="rep-arc" id="arc-${id}-${side}-${si}"/>
+    </svg>
+    <span class="cv${cls}" id="rv-${id}-${side}-${si}">${reps}</span>
+  </div>`;
+}
+
+function refreshRing(id, side, si, reps) {
+  const pct = Math.min(reps / TARGET, 1);
+  const offset = (RING_CIRC * (1 - pct)).toFixed(2);
+  const stroke = reps >= TARGET ? '#5a7a3a' : '#c8d9b8';
+  const arc = document.getElementById(`arc-${id}-${side}-${si}`);
+  if (arc) { arc.setAttribute('stroke-dashoffset', offset); arc.setAttribute('stroke', stroke); }
+  const cv = document.getElementById(`rv-${id}-${side}-${si}`);
+  if (cv) {
+    cv.textContent = reps;
+    cv.className = 'cv' + (reps >= TARGET ? (reps === TARGET ? ' hit' : ' over') : '');
+    cv.classList.add('popping');
+    setTimeout(() => cv.classList.remove('popping'), 240);
+  }
+}
+
+/* ── Render ──────────────────────────────────── */
+function render() {
+  document.getElementById('hdate').textContent =
+    new Date().toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const c = document.getElementById('cards'); c.innerHTML = '';
+
+  EX.forEach((ex, idx) => {
+    const st = state[ex.id];
+    const sides = ex.sided ? ['left','right'] : ['both'];
+    const sideLabel = { left:'왼쪽', right:'오른쪽', both:'양쪽' };
+
+    let lT=0, rT=0;
+    if (ex.sided) { st.sides.left.forEach(s=>lT+=s.reps); st.sides.right.forEach(s=>rT+=s.reps); }
+    const total=lT+rT, lp=total>0?Math.round((lT/total)*100):50, diff=Math.abs(lT-rT);
+    const bClass = diff===0&&total>0?'bal-g':diff<=5?'bal-w':'bal-b';
+    const bText  = !ex.sided||total===0?'':diff===0?'균형':diff<=5?`차이 ${diff}회`:`불균형 ${diff}회`;
+
+    const sidesHTML = sides.map(side => {
+      const rows = st.sides[side].map((set,si) => `
+        <div class="set-row">
+          <span class="set-lbl">${si+1}세트</span>
+          <div class="set-ctrl">
+            <button class="cb" onclick="adj('${ex.id}','${side}',${si},-1)">−</button>
+            ${ringHTML(ex.id, side, si, set.reps)}
+            <button class="cb" onclick="adj('${ex.id}','${side}',${si},1)">+</button>
+          </div>
+        </div>`).join('');
+      return `<div class="side-block"><div class="side-title">${sideLabel[side]}</div>${rows}</div>`;
+    }).join('');
+
+    const balHTML = ex.sided ? `
+      <div class="bal-wrap">
+        <div class="bal-track">
+          <span class="bal-side">왼</span>
+          <div class="bal-bar"><div class="bal-fill" id="bf-${ex.id}" style="width:${lp}%"></div></div>
+          <span class="bal-status ${bClass}" id="bs-${ex.id}">${bText}</span>
+        </div>
+        <div class="bal-pct" id="bp-${ex.id}"><span>${lp}%</span><span>${100-lp}%</span></div>
+      </div>` : '';
+
+    const tm = st.timer;
+    const dispSec = tm.sec > 0 ? tm.sec : tm.preset;
+
+    const div = document.createElement('div');
+    div.className = 'ex-card' + (st.done ? ' done' : '');
+    div.id = 'card-' + ex.id;
+    div.innerHTML = `
+      <div class="ex-top">
+        <div class="ex-meta">
+          <div class="ex-idx${st.done?' done':''}" id="ei-${ex.id}">${st.done?'✓':EMOJIS[idx]}</div>
+          <div>
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-sub">${ex.sub} · ${NUM_SETS}세트 × ${TARGET}회</div>
+          </div>
+        </div>
+        <button class="done-btn${st.done?' on':''}" onclick="toggleDone('${ex.id}')">${st.done?'완료 ✓':'완료 표시'}</button>
+      </div>
+      <div class="sides">${sidesHTML}</div>
+      ${balHTML}
+      <div class="timer-bar">
+        <span class="t-label">휴식 타이머</span>
+        <div class="presets">
+          ${[30,60,90].map(p=>`<button class="pre${tm.preset===p?' on':''}" onclick="setPre('${ex.id}',${p})">${p}s</button>`).join('')}
+        </div>
+        <button class="t-btn${tm.running?' running':''}" id="tb-${ex.id}" onclick="toggleT('${ex.id}')">${tm.running?'중지':'시작'}</button>
+        <span class="t-num${dispSec<=3&&tm.running?' urgent':''}" id="td-${ex.id}">${fmt(dispSec)}</span>
+      </div>`;
+    c.appendChild(div);
+  });
+  updateSummary(); updateProg();
+}
+
+/* ── Reps ───────────────────────────────────── */
+function adj(id, side, si, d) {
+  state[id].sides[side][si].reps = Math.max(0, state[id].sides[side][si].reps + d);
+  refreshRing(id, side, si, state[id].sides[side][si].reps);
+  if (state[id].sides.left && state[id].sides.right) updateBal(id);
+  updateSummary();
+}
+
+function updateBal(id) {
+  let l=0, r=0;
+  state[id].sides.left.forEach(s=>l+=s.reps);
+  state[id].sides.right.forEach(s=>r+=s.reps);
+  const t=l+r, lp=t>0?Math.round((l/t)*100):50, diff=Math.abs(l-r);
+  const bf=document.getElementById('bf-'+id), bs=document.getElementById('bs-'+id), bp=document.getElementById('bp-'+id);
+  if(bf) bf.style.width = lp+'%';
+  if(bs) { bs.className='bal-status '+(diff===0&&t>0?'bal-g':diff<=5?'bal-w':'bal-b'); bs.textContent=t===0?'':diff===0?'균형':diff<=5?`차이 ${diff}회`:`불균형 ${diff}회`; }
+  if(bp) bp.innerHTML = `<span>${lp}%</span><span>${100-lp}%</span>`;
+}
+
+function toggleDone(id) {
+  state[id].done = !state[id].done; const on = state[id].done;
+  const card=document.getElementById('card-'+id), ei=document.getElementById('ei-'+id), btn=card.querySelector('.done-btn');
+  card.classList.toggle('done',on); ei.classList.toggle('done',on);
+  ei.textContent = on ? '✓' : EMOJIS[EX.findIndex(e=>e.id===id)];
+  btn.classList.toggle('on',on); btn.textContent = on ? '완료 ✓' : '완료 표시';
+  updateProg();
+}
+
+/* ── Timer ───────────────────────────────────── */
+function setPre(id, sec) {
+  const tm = state[id].timer; tm.preset = sec;
+  if (!tm.running) { tm.sec = 0; const el=document.getElementById('td-'+id); if(el) el.textContent=fmt(sec); }
+  document.querySelectorAll(`#card-${id} .pre`).forEach((b,i) => b.classList.toggle('on', [30,60,90][i]===sec));
+}
+
+function toggleT(id) {
+  const tm = state[id].timer;
+  if (tm.running) {
+    clearInterval(ivals[id]); tm.running = false; tm.sec = 0;
+    const b=document.getElementById('tb-'+id), d=document.getElementById('td-'+id);
+    if(b){ b.textContent='시작'; b.classList.remove('running'); }
+    if(d){ d.textContent=fmt(tm.preset); d.classList.remove('urgent'); }
+    return;
+  }
+  /* unlock AudioContext on user gesture */
+  try { getCtx().resume(); } catch(e) {}
+
+  tm.running = true;
+  if (tm.sec <= 0) tm.sec = tm.preset;
+  const totalSec = tm.sec;
+
+  const b = document.getElementById('tb-'+id);
+  if(b){ b.textContent='중지'; b.classList.add('running'); }
+
+  /* 🔔 3·2·1 비프 미리 예약 (Web Audio clock 기반, 정확함) */
+  if (totalSec > 3) scheduleCountdown(totalSec);
+
+  ivals[id] = setInterval(() => {
+    tm.sec--;
+    const d = document.getElementById('td-'+id);
+    if(d){ d.textContent = fmt(tm.sec); d.classList.toggle('urgent', tm.sec <= 3 && tm.sec > 0); }
+
+    if (tm.sec <= 0) {
+      clearInterval(ivals[id]); tm.running = false;
+      const b2 = document.getElementById('tb-'+id);
+      if(b2){ b2.textContent='시작'; b2.classList.remove('running'); }
+      if(d) d.classList.remove('urgent');
+      beepDone();
+      showToast('🌿 휴식 완료 — 다음 세트 시작하세요');
+    }
+  }, 1000);
+}
+
+/* ── Summary / Progress ─────────────────────── */
+function updateSummary() {
+  let reps=0, sets=0, lA=0, rA=0;
+  EX.forEach(ex => {
+    const sides = ex.sided ? ['left','right'] : ['both'];
+    sides.forEach(s => state[ex.id].sides[s].forEach(r => { reps+=r.reps; if(r.reps>=TARGET) sets++; }));
+    if(ex.sided){ state[ex.id].sides.left.forEach(s=>lA+=s.reps); state[ex.id].sides.right.forEach(s=>rA+=s.reps); }
+  });
+  document.getElementById('s-reps').textContent = reps;
+  document.getElementById('s-sets').textContent = sets;
+  const t=lA+rA, diff=Math.abs(lA-rA), lp=t>0?Math.round((lA/t)*100):50;
+  const el=document.getElementById('s-bal');
+  el.textContent = t===0?'—':diff===0?'균형':lp+'%';
+  el.style.color = diff===0&&t>0?'#5a7a3a':diff<=10?'#b07a20':'#8a3a2a';
+}
+
+function updateProg() {
+  const done = EX.filter(ex=>state[ex.id].done).length;
+  document.getElementById('pfill').style.width = Math.round((done/EX.length)*100)+'%';
+  document.getElementById('ptxt').textContent = done+' / '+EX.length;
+}
+
+/* ── Save / Reset ───────────────────────────── */
+function save() {
+  let has=false;
+  EX.forEach(ex=>Object.values(state[ex.id].sides).forEach(s=>s.forEach(r=>{ if(r.reps>0) has=true; })));
+  if(!has){ showToast('운동 횟수를 먼저 입력해주세요'); return; }
+  const today = new Date().toISOString().slice(0,10);
+  const snap = { date:today, exercises:{} };
+  EX.forEach(ex => {
+    snap.exercises[ex.id] = { sides:{}, done:state[ex.id].done };
+    Object.entries(state[ex.id].sides).forEach(([s,sets]) => { snap.exercises[ex.id].sides[s]=sets.map(r=>({reps:r.reps})); });
+  });
+  const i=log.findIndex(e=>e.date===today); if(i>=0) log[i]=snap; else log.unshift(snap);
+  localStorage.setItem('hiplog_forest', JSON.stringify(log));
+  showToast('🌿 오늘의 루틴이 저장되었습니다');
+}
+
+function resetAll() { Object.keys(ivals).forEach(id=>clearInterval(ivals[id])); initState(); render(); }
+
+/* ── Tabs ───────────────────────────────────── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['workout','calendar','history'][i]===tab));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='calendar') renderCalendar();
+  if(tab==='history')  renderHistory();
+}
+
+/* ── Calendar ───────────────────────────────── */
+function renderCalendar() {
+  const y=calDate.getFullYear(), m=calDate.getMonth();
+  document.getElementById('cal-title').textContent=`${y}년 ${m+1}월`;
+  document.getElementById('cal-days').innerHTML=['일','월','화','수','목','금','토'].map(d=>`<div class="cal-dn">${d}</div>`).join('');
+  const first=new Date(y,m,1).getDay(), total=new Date(y,m+1,0).getDate(), today=new Date().toISOString().slice(0,10);
+  const grid=document.getElementById('cal-grid'); grid.innerHTML='';
+  for(let i=0;i<first;i++){const d=document.createElement('div');d.className='cal-cell empty';d.textContent=' ';grid.appendChild(d);}
+  for(let d=1;d<=total;d++){
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hl=log.find(e=>e.date===ds);
+    const div=document.createElement('div');
+    div.className='cal-cell'+(hl?' has-data':'')+(ds===today?' today':'');
+    div.innerHTML=d+(hl?'<div class="dot"></div>':'');
+    if(hl) div.onclick=()=>switchTab('history');
+    grid.appendChild(div);
+  }
+}
+function changeMonth(d){ calDate.setMonth(calDate.getMonth()+d); renderCalendar(); }
+
+/* ── History ────────────────────────────────── */
+function calcStreak(){
+  if(!log.length) return 0;
+  const dates=log.map(e=>e.date).sort().reverse();
+  let streak=0, cur=new Date();
+  for(let d of dates){ if(d===cur.toISOString().slice(0,10)){ streak++; cur.setDate(cur.getDate()-1); } else break; }
+  return streak;
+}
+
+function renderHistory(){
+  let totalReps=0, lA=0, rA=0;
+  log.forEach(e=>{
+    EX.forEach(ex=>{
+      const d=e.exercises[ex.id]; if(!d) return;
+      Object.values(d.sides).forEach(s=>s.forEach(r=>totalReps+=r.reps));
+      if(ex.sided&&d.sides.left&&d.sides.right){ d.sides.left.forEach(s=>lA+=s.reps); d.sides.right.forEach(s=>rA+=s.reps); }
+    });
+  });
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="scard"><div class="snum">${log.length}</div><div class="slbl">총 운동일</div></div>
+    <div class="scard"><div class="snum">${totalReps}</div><div class="slbl">총 횟수</div></div>
+    <div class="scard"><div class="snum">${calcStreak()}</div><div class="slbl">연속일 🌱</div></div>`;
+  renderHistChart();
+  const list=document.getElementById('history-list');
+  if(!log.length){ list.innerHTML='<div class="empty-state"><div class="es-icon">🌱</div>아직 저장된 기록이 없어요<br>첫 번째 루틴을 완성해보세요</div>'; return; }
+  list.innerHTML=log.slice(0,30).map((e,li)=>{
+    const rows=EX.map(ex=>{
+      const d=e.exercises[ex.id];
+      if(!d||!Object.values(d.sides).some(s=>s.some(r=>r.reps>0))) return '';
+      let lv=0, rv=0;
+      if(ex.sided&&d.sides.left&&d.sides.right){ d.sides.left.forEach(s=>lv+=s.reps); d.sides.right.forEach(s=>rv+=s.reps); }
+      const diff=Math.abs(lv-rv), bc=diff===0?'bg':diff<=5?'bw':'bb';
+      const balBadge=ex.sided?`<span class="badge ${bc}">${diff===0?'균형':diff<=5?'주의':'불균형'}</span>`:'';
+      const val=ex.sided?`왼 ${lv} / 오 ${rv}`:Object.values(d.sides)[0].reduce((a,s)=>a+s.reps,0)+'회';
+      return `<div class="log-row"><span>${ex.name}${balBadge}</span><span class="log-val">${val}</span></div>`;
+    }).filter(Boolean).join('');
+    const realIdx = log.findIndex(l=>l.date===e.date);
+    return `<div class="log-entry">
+      <div class="log-header">
+        <div class="log-date">${e.date}</div>
+        <div class="log-actions">
+          <button class="log-act-btn log-edit-btn" onclick="openEdit(${realIdx})">수정</button>
+          <button class="log-act-btn log-del-btn"  onclick="openDeleteConfirm(${realIdx})">삭제</button>
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+/* ── Edit modal ─────────────────────────────── */
+let editIdx = null;
+let editDraft = null;
+
+function openEdit(idx) {
+  editIdx = idx;
+  const entry = log[idx];
+  editDraft = JSON.parse(JSON.stringify(entry)); // deep copy
+
+  document.getElementById('modal-date').textContent = entry.date;
+  const body = document.getElementById('modal-body');
+  body.innerHTML = EX.map(ex => {
+    const d = editDraft.exercises[ex.id];
+    if (!d) return '';
+    const sides = ex.sided ? ['left','right'] : ['both'];
+    const sideLabel = {left:'왼쪽', right:'오른쪽', both:'양쪽'};
+    const hasData = sides.some(s => d.sides[s] && d.sides[s].some(r=>r.reps>0));
+    if (!hasData) return '';
+    const sidesHTML = sides.map(side => {
+      if (!d.sides[side]) return '';
+      const rows = d.sides[side].map((set,si) => {
+        const cls = set.reps>=TARGET?(set.reps===TARGET?' mhit':' mover'):'';
+        return `<div class="modal-set-row">
+          <span class="modal-set-lbl">${si+1}세트</span>
+          <div class="modal-set-ctrl">
+            <button class="mcb" onclick="editAdj('${ex.id}','${side}',${si},-1)">−</button>
+            <span class="mcv${cls}" id="me-${ex.id}-${side}-${si}">${set.reps}</span>
+            <button class="mcb" onclick="editAdj('${ex.id}','${side}',${si},1)">+</button>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="modal-side-block"><div class="modal-side-title">${sideLabel[side]}</div>${rows}</div>`;
+    }).filter(Boolean).join('');
+    return `<div class="modal-ex"><div class="modal-ex-name">${ex.name}</div><div class="modal-sides">${sidesHTML}</div></div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('modal-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function editAdj(exId, side, si, d) {
+  editDraft.exercises[exId].sides[side][si].reps = Math.max(0, editDraft.exercises[exId].sides[side][si].reps + d);
+  const v = editDraft.exercises[exId].sides[side][si].reps;
+  const el = document.getElementById(`me-${exId}-${side}-${si}`);
+  if (el) { el.textContent=v; el.className='mcv'+(v>=TARGET?(v===TARGET?' mhit':' mover'):''); }
+}
+
+function closeModal(e) { if (e.target === document.getElementById('modal-overlay')) closeModalDirect(); }
+function closeModalDirect() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+  editIdx = null; editDraft = null;
+}
+
+function saveEdit() {
+  if (editIdx === null) return;
+  log[editIdx] = editDraft;
+  localStorage.setItem('hiplog_forest', JSON.stringify(log));
+  closeModalDirect();
+  renderHistory();
+  showToast('🌿 기록이 수정되었습니다');
+}
+
+/* ── Delete confirm ─────────────────────────── */
+let deleteIdx = null;
+
+function openDeleteConfirm(idx) {
+  deleteIdx = idx;
+  document.getElementById('confirm-msg').innerHTML = `<strong>${log[idx].date}</strong><br>기록을 삭제할까요?<br>삭제 후 복구할 수 없습니다.`;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('show');
+  deleteIdx = null;
+}
+function confirmDelete() {
+  if (deleteIdx === null) return;
+  log.splice(deleteIdx, 1);
+  localStorage.setItem('hiplog_forest', JSON.stringify(log));
+  closeConfirm();
+  renderHistory();
+  showToast('🍂 기록이 삭제되었습니다');
+}
+
+function renderHistChart(){
+  const recent=log.slice(0,7).reverse();
+  const labels=recent.map(e=>e.date.slice(5));
+  const lefts=recent.map(e=>{let t=0;EX.forEach(ex=>{const d=e.exercises[ex.id];if(d&&d.sides.left)d.sides.left.forEach(s=>t+=s.reps)});return t;});
+  const rights=recent.map(e=>{let t=0;EX.forEach(ex=>{const d=e.exercises[ex.id];if(d&&d.sides.right)d.sides.right.forEach(s=>t+=s.reps)});return t;});
+  if(histChart) histChart.destroy();
+  histChart=new Chart(document.getElementById('histChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'왼쪽',  data:lefts,  backgroundColor:'#8aab6e', borderRadius:5},
+      {label:'오른쪽', data:rights, backgroundColor:'#3d5a3e', borderRadius:5}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{size:12,family:"'Noto Serif KR'"},boxWidth:10,padding:12,color:'#5a6e4a'}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8a9e7a',font:{size:11}}},
+        y:{beginAtZero:true,grid:{color:'rgba(200,217,184,0.3)'},ticks:{color:'#8a9e7a',precision:0}}
+      }
+    }
+  });
+}
+
+/* ── Toast ───────────────────────────────────── */
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+render();
+</script>
+</body>
+</html>
